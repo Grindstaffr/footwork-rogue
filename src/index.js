@@ -1,5 +1,14 @@
 import * as PIXI from 'pixi.js';
 import * as ROT from '../node_modules/rot-js';
+import { Entity } from './entity.js'
+import { Loader } from './loader.js';
+import { MapGenerator, MapEntity, WallTile, WallType, FloorTile, FloorType } from './mapgen.js';
+import { ItemContainer, LootChest } from './itemContainer.js';
+import { Unit } from './unit.js'
+import { Player } from './player.js';
+import { SelectedTile } from './selectedTile.js'
+
+/*
 
 class Entity {
     constructor(){
@@ -9,7 +18,6 @@ class Entity {
     }
     static Entities = [];
 }
-
 class MapEntity extends Entity {
     constructor (x,y){
         super();
@@ -72,6 +80,24 @@ class Unit extends MapEntity {
     }
 }
 
+class Monster extends Unit {
+    constructor(x,y,breed){
+        super(x,y)
+        this.breed = breed;
+    }
+}
+
+class Breed {
+    constructor(name, AI, hp, moves){//x,y == spawnpoint;
+
+    }
+}
+
+class PlayerClass {
+    constructor () {
+
+    }
+}
 
 class Player extends Unit {
     constructor(x,y){
@@ -116,20 +142,35 @@ class LootChest extends MapEntity {
     static chestTypes = {};
 }
 
+class TileType {
+    constructor (spriteName, onStep) {
+        this.spriteName = `assets/tiles/${spriteName}.png`;
+        this.onStep = onStep;
+    }
+}
+
 class FloorTile extends MapEntity {
     constructor (x,y, tileType) {
         super(x,y);
         this.type = "floorTile";
         this.sprite = undefined;
         this.altTexture = undefined;
-        this.tileType = tileType || '1';
+
+
+        this.tileType = tileType || FloorTile.getDefaultTileType();
+
         this.highlighted = false;
         if (FloorTile.tileTypes[this.tileType] === undefined){
             FloorTile.tileTypes[this.tileType] = [];
-        } 
+        }
+
         FloorTile.tileTypes[this.tileType].push(`${this.x},${this.y}`);
     }
     static tileTypes = {};
+
+    static getDefaultTileType () {
+        return new TileType ('tile1', function(){})
+    }
     textureSwap () {
         if (this.sprite === undefined){
             return;
@@ -161,13 +202,19 @@ class SelectedTile extends MapEntity {
         this.x = x;
         this.y = y;
     }
-}
+}*/
 
 class Renderer {
     constructor (camera) {
         this.app = new PIXI.Application();
         document.body.appendChild(this.app.view);
         this.app.stage.interactive = true;
+    }
+    makeSprite(texture) {
+        return new PIXI.Sprite(texture);
+    }
+    getStage(){
+        return this.app.stage
     }
 
     addCamera (camera) {
@@ -214,8 +261,9 @@ class Camera extends Entity {
     constructor (gameInstance) {
         super();
         this.type = `camera`;
-        this.x = gameInstance.player.x;
-        this.y = gameInstance.player.y;
+        this.x = gameInstance.map.player.x;
+        this.y = gameInstance.map.player.y;
+        console.log(gameInstance)
     }
 
     calibrate (rendererViewport) {
@@ -231,11 +279,18 @@ class Camera extends Entity {
     }
 
     focus () {//places active center at render center...?
-        MapEntity.mapEntities.forEach(function(mapEntity){
-            var entityLoc = mapEntity.getMapCoordinates();
+        Entity.Entities.forEach(function(entity, entityID){ // This needs to be reworked...
+            if (true){
+
+            }
+            var entityLoc = Entity.getMapCoordinates(entityID);
+            if (entityLoc === undefined){
+                return;
+            }
             var relativeLoc = this.getRelativePosition(entityLoc[0], entityLoc[1]);
             var newLoc = this.castToRenderCoordinates(relativeLoc[0], relativeLoc[1]);
-            mapEntity._initSetSpriteCoordinates(newLoc[0], newLoc[1]);
+            Entity._initSetSpriteCoordinates(entityID, newLoc[0], newLoc[1]);
+
         }, this)
     }
 
@@ -253,7 +308,7 @@ class Camera extends Entity {
     }
 }
 
-
+/*
 class Loader {
     constructor (renderer) {
         this.app = renderer.app
@@ -282,6 +337,13 @@ class Loader {
                 arguments[i]();
             }
         })
+    }
+
+    _preloadMonsters() {
+        this.app.loader.add('goblin', `assets/goblin1.png`)
+    }
+    _loadMonsters(){
+        
     }
     _preloadFloorTiles () {
         this.app.loader.add('highlight','assets/highlight.png')
@@ -331,33 +393,14 @@ class Loader {
     _preloadPlayer () {
         //hardcoded basic sprite before implement spritesheets with PIXI
         //need texture packer (will help eliminate eventual download overhead)
-       /* var prefix = 'assets/playerSprites';
-        var map = {
-            right : '/right/right.png',
-            left : '/left/left.png',
-            up: '/up/up.png',
-            down : '/down/down.png',
-        }
-        Object.keys(map).forEach(function(key){
-            this.app.loader.add(`playerSprite${key}`,`${prefix}${map[key]}`)
-        }, this)
-        */
+       
 
         this.app.loader.add('playerSprite','assets/up.png')
         
 
     }
     _loadPlayerSprites (resources) {
-        //fragile... currently dependant on hard-coded map object in _preloadPlayer
-        /*
-        for (var key in gameInstance.player.textures){
-            gameInstance.player.textures[key] = resources[`playerSprite${key}`];
-        }
-        var sprite = new PIXI.Sprite(resources[`playerSprite${gameInstance.player.direction}`].texture);
-        sprite.x = (gameInstance.player.x) * 32 - (gameInstance.player.y*32);
-        sprite.y = (gameInstance.player.y) *16 + (gameInstance.player.x * 16);
-        gameInstance.player.sprite = sprite;
-        */
+     
         var sprite = new PIXI.Sprite(resources[`playerSprite`].texture);
         sprite.x = (gameInstance.player.x) * 32 - (gameInstance.player.y*32);
         sprite.y = (gameInstance.player.y) *16 + (gameInstance.player.x * 16);
@@ -365,6 +408,7 @@ class Loader {
         this.app.stage.addChild(sprite);
     }
 }
+*/
 
 class TurnsQueue {
     constructor () {
@@ -381,6 +425,12 @@ class TurnsQueue {
     static doTurn () {
         
     }
+}
+
+class Tileattack {
+    constructor (relX, relY) {
+        
+    } 
 }
 
 class Tilemove {
@@ -401,7 +451,7 @@ class Tilemove {
     }
 
     do(unit, totalFrameCount){ //might eventually depreciate totalframecount for fixed value
-        var currentLoc = unit.getSpriteCoordinates();
+        var currentLoc = unit.getSpritePos();
         //still need to check map to see if it's a valid move.
 
         unit.x += this.scalars[0];
@@ -432,7 +482,7 @@ class Tilemove {
                  
                     var newX = currentLoc[0] + (32*x) - (32*y);
                     var newY = currentLoc[1] + (16*x) + (16*y);
-                    unit.setSpriteCoordinates(newX, newY);
+                    unit.setSpritePos(newX, newY);
                     if (this.i === totalFrameCount){
                         gameInstance.display.camera.update(unit.x, unit.y)
                     }
@@ -525,6 +575,10 @@ class ActionSystem {
         ActionSystem.actionDelegator[unit.uniqueID] = []; 
     }
 
+    static wipeFutureActionsFor(unit){
+        ActionSystem.actionDelegator[unit.uniqueID] = [];
+    }
+
     static assignAction(unit, action){ //constructs tickerevent from action
         if (ActionSystem.actions[action] === undefined){
             return;
@@ -587,9 +641,9 @@ class TickerQueue {
     static getTickerEvents () {
         return TickerQueue._queue.shift()
     }
-    static fetchFromActionSystem () {
-        if (ActionSystem.actionsAreQueued()){
-                ActionSystem.getNextActions().forEach(function(action){
+    static fetchFromActionSystem (actionSystem) {
+        if (actionSystem.actionsAreQueued()){
+                actionSystem.getNextActions().forEach(function(action){
                 TickerQueue.enqueue(action)
             })
         }   
@@ -612,9 +666,9 @@ class Inputhandler {
     }
     handleLeftClick(e){
         var game = this.game
-        var path = this.game.pathfinder.astar(this.game.player.x,this.game.player.y, this.game.map.selectedTile.x, this.game.map.selectedTile.y);
+        var path = this.game.pathfinder.astar(this.game.map.player.x,this.game.map.player.y, this.game.map.selectedTile.x, this.game.map.selectedTile.y);
         path.forEach(function(dir){
-            ActionSystem.queueAction(game.player,dir)
+            ActionSystem.queueAction(game.map.player,dir) //<---- needs to be revised for modularity
         })
     }
     handleRightClick(e){
@@ -625,18 +679,18 @@ class Inputhandler {
         var game = this.game
         const map = {
             'W' : function () {
-                ActionSystem.queueAction(game.player, 'up')
+                ActionSystem.queueAction(game.map.player, 'up')
                             },
             'A' : function () {
-                ActionSystem.queueAction(game.player, 'left')
+                ActionSystem.queueAction(game.map.player, 'left')
 
             },
             'S' : function () {
-                ActionSystem.queueAction(game.player, 'down')
+                ActionSystem.queueAction(game.map.player, 'down')
 
             },
             'D' : function () {
-                ActionSystem.queueAction(game.player, 'right')
+                ActionSystem.queueAction(game.map.player, 'right')
             }
         }
         if (map[lett] !== undefined){
@@ -647,6 +701,7 @@ class Inputhandler {
     handleMousemove (e) {
         var x = e.data.global.x;
         var y = e.data.global.y;
+
 
         var gameCamera = gameInstance.display.camera;
 
@@ -659,9 +714,9 @@ class Inputhandler {
         var relativeLocCartesian = [x - defaultCenterX, y - defaultCenterY];
 
         var xm = (relativeLocCartesian[0] + 2*relativeLocCartesian[1])/64 - .5;
-        var ym = (2*relativeLocCartesian[1] - relativeLocCartesian[0])/64 - .5
+        var ym = (2*relativeLocCartesian[1] - relativeLocCartesian[0])/64 - .5;
         var outX = centerX + Math.floor(xm)
-        var outY = centerY + Math.floor(ym + 1 );
+        var outY = centerY + Math.floor(ym + 1);
 
         //console.log(outX, outY);
         
@@ -670,7 +725,21 @@ class Inputhandler {
     }
 
     setMouseIsOver (x,y) {
+        
         this.game.selectTile(x,y)
+    }
+}
+
+class EnemySpawner {
+    constructor (map) {
+        this.map = map;
+    }
+    randomSpawnNGoblins (n) {
+        for (var i = 0; i < n; i++){
+            var index = Math.floor(ROT.RNG.getUniform() * this.map.freeCells.length)
+            var loc = this.map.freeCells.splice(index, 1)[0];
+            this.map.monsters[`${loc[0]},${loc[1]}`] = new Goblin(loc[0],loc[1]);
+        }
     }
 }
 
@@ -687,8 +756,9 @@ class Game {
             selectedTile : {}, // holds the one and only selected tile
          };
          this.player = null;
-         this._generateMap(); //care, selectedTile currently hardcoded as entity #0;
-         this._generateBoxes(10);
+         this._generateMap(); 
+         this._makeSelectedTile();
+         //this._generateBoxes(10);
          this._spawnPlayer();
     }
     selectTile (x,y) {
@@ -703,20 +773,15 @@ class Game {
         }
     }
     _generateMap () {
+        this.map = MapGenerator.getMap();
+        this.loader.addToLoadQueue(MapGenerator.getLoadables())
+        this.loader.addToProcessQueue(MapGenerator.allocateFromLoadedResources)
+
+    }
+    _makeSelectedTile(){
         this.map.selectedTile = new SelectedTile(0,0);
-
-        var digger = new ROT.Map.Digger();
-
-        var digCallback = function (x,y,value) {
-            if (value) {return;}
-
-            var key = x + "," + y;
-            this.map.floorTiles[key] = new FloorTile(x,y)
-            this.map.freeCells.push([x,y])
-        }
-
-        digger.create(digCallback.bind(this));
-
+        this.loader.addToLoadQueue(SelectedTile.getLoadables());
+        this.loader.addToProcessQueue(SelectedTile.allocateFromLoadedResources)
     }
 
     _generateBoxes (boxCount) {
@@ -730,7 +795,9 @@ class Game {
     _spawnPlayer () {
         var index = Math.floor(ROT.RNG.getUniform() * this.map.freeCells.length)
         var loc = this.map.freeCells.splice(index, 1)[0];
-        this.player = new Player(loc[0],loc[1]);
+        this.map.player = new Player(loc[0],loc[1]);
+        this.loader.addToLoadQueue(Player.getLoadables());
+        this.loader.addToProcessQueue(Player.allocateFromLoadedResources);
     }
 
     _postLoadInit () {
@@ -755,7 +822,7 @@ class Game {
 
         this.display.app.ticker.add(updateFPS);
 
-
+        //TickerQueue may not always be accessible here? Idk...
         this.display.app.ticker.add(function(){
             if (TickerQueue.shouldGetEvents()){
                
@@ -763,7 +830,7 @@ class Game {
                     event();
                 });
             } else {
-                TickerQueue.fetchFromActionSystem();
+                TickerQueue.fetchFromActionSystem(ActionSystem);
             }
         })
         this.InputHandler = new Inputhandler(this.display.app.stage, this)
@@ -773,4 +840,5 @@ class Game {
 //spin up game instance (all this shit (bootup functions) should probably get thrown in a bucket)
 
 const gameInstance = new Game;
-gameInstance.loader.load(gameInstance._postLoadInit.bind(gameInstance));
+gameInstance.loader.addToProcessQueue(gameInstance._postLoadInit.bind(gameInstance))
+gameInstance.loader.loadOntoMap(gameInstance.map);
